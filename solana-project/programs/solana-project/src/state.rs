@@ -61,7 +61,7 @@ pub struct TransactionAccount {
 #[account]
 #[derive(Default)]
 pub struct Count {
-    pub count: u8,
+    pub count: u128,
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]

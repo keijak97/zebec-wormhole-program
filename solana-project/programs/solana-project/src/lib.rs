@@ -122,7 +122,7 @@ pub mod solana_project {
         Ok(())
     }
 
-    pub fn store_msg(ctx: Context<StoreMsg>, current_count: u8, sender: Vec<u8>) -> Result<()> {
+    pub fn store_msg(ctx: Context<StoreMsg>, current_count: u128, sender: Vec<u8>) -> Result<()> {
         //Hash a VAA Extract and derive a VAA Key
         let vaa = PostedMessageData::try_from_slice(&ctx.accounts.core_bridge_vaa.data.borrow())?.0;
         let serialized_vaa = serialize_vaa(&vaa);
@@ -188,8 +188,8 @@ pub mod solana_project {
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
         data: Vec<u8>,
-        current_count: u8,
-        chain_id: Vec<u8>,
+        current_count: u128,
+        chain_id: u16,
         sender: Vec<u8>,
     ) -> Result<()> {
         //Build Transactions
@@ -259,7 +259,7 @@ pub mod solana_project {
             .collect();
 
         let bump = ctx.bumps.get("pda_signer").unwrap().to_le_bytes();
-        let seeds: &[&[_]] = &[&sender, &chain_id, bump.as_ref()];
+        let seeds: &[&[_]] = &[&sender, &chain_id.to_be_bytes(), bump.as_ref()];
         let signer = &[&seeds[..]];
         let accounts = ctx.remaining_accounts;
 
@@ -276,7 +276,8 @@ pub mod solana_project {
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
         data: Vec<u8>,
-        current_count: u8,
+
+        current_count: u128,
         sender: Vec<u8>,
     ) -> Result<()> {
         //Build Transactions
@@ -364,8 +365,8 @@ pub mod solana_project {
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
         data: Vec<u8>,
-        current_count: u8,
-        chain_id: Vec<u8>,
+        current_count: u128,
+        chain_id: u16,
         sender: Vec<u8>,
     ) -> Result<()> {
         //Build Transactions
@@ -465,7 +466,7 @@ pub mod solana_project {
             .collect();
 
         let bump = ctx.bumps.get("pda_signer").unwrap().to_le_bytes();
-        let seeds: &[&[_]] = &[&sender, &chain_id, bump.as_ref()];
+        let seeds: &[&[_]] = &[&sender, &chain_id.to_be_bytes(), bump.as_ref()];
         let signer = &[&seeds[..]];
         let accounts = ctx.remaining_accounts;
 
@@ -481,7 +482,7 @@ pub mod solana_project {
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
         data: Vec<u8>,
-        current_count: u8,
+        current_count: u128,
         chain_id: Vec<u8>,
         sender: Vec<u8>,
     ) -> Result<()> {
@@ -581,7 +582,8 @@ pub mod solana_project {
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
         data: Vec<u8>,
-        current_count: u8,
+        
+        current_count: u128,
         sender: Vec<u8>,
     ) -> Result<()> {
         //Build Transactions
@@ -655,7 +657,7 @@ pub mod solana_project {
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
         data: Vec<u8>,
-        current_count: u8,
+        current_count: u128,
         sender: Vec<u8>,
     ) -> Result<()> {
         //Build Transactions
@@ -726,7 +728,7 @@ pub mod solana_project {
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
         data: Vec<u8>,
-        current_count: u8,
+        current_count: u128,
         sender: Vec<u8>,
     ) -> Result<()> {
         //Build Transactions
@@ -782,7 +784,7 @@ pub mod solana_project {
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
         data: Vec<u8>,
-        current_count: u8,
+        current_count: u128,
         sender: Vec<u8>,
     ) -> Result<()> {
         //Build Transactions
@@ -852,8 +854,8 @@ pub mod solana_project {
     pub fn transaction_direct_transfer_native(
         ctx: Context<DirectTransferNative>,
         sender: Vec<u8>,
-        chain_id: Vec<u8>,
-        current_count: u8,
+        chain_id: u16,
+        current_count: u128,
         target_chain: u16,
         fee: u64,
     ) -> Result<()> {
@@ -894,8 +896,9 @@ pub mod solana_project {
     pub fn transaction_direct_transfer_wrapped(
         ctx: Context<DirectTransferWrapped>,
         sender: Vec<u8>,
-        chain_id: Vec<u8>,
-        current_count: u8,
+        chain_id: u16,
+        
+        current_count: u128,
         token_address: Vec<u8>,
         target_chain: u16,
 
@@ -936,7 +939,7 @@ pub mod solana_project {
 
     pub fn execute_transaction(
         ctx: Context<ExecuteTransaction>,
-        from_chain_id: Vec<u8>,
+        from_chain_id: u16,
         eth_add: Vec<u8>,
     ) -> Result<()> {
         // params if passed incorrecrtly the signature will not work and the txn will panic.
@@ -962,7 +965,7 @@ pub mod solana_project {
             .collect();
 
         let bump = ctx.bumps.get("pda_signer").unwrap().to_le_bytes();
-        let seeds: &[&[_]] = &[&eth_add, &from_chain_id, bump.as_ref()];
+        let seeds: &[&[_]] = &[&eth_add, &from_chain_id.to_be_bytes(), bump.as_ref()];
         let signer = &[&seeds[..]];
         let accounts = ctx.remaining_accounts;
 
@@ -976,7 +979,7 @@ pub mod solana_project {
     pub fn transfer_wrapped(
         ctx: Context<DirectTransferWrapped>,
         sender: Vec<u8>,
-        sender_chain: Vec<u8>,
+        sender_chain: u16,
         target_chain: u16,
 
         fee: u64,
@@ -992,7 +995,7 @@ pub mod solana_project {
 
         let bump = ctx.bumps.get("from_owner").unwrap().to_le_bytes();
 
-        let signer_seeds: &[&[&[u8]]] = &[&[&sender, &sender_chain, &bump]];
+        let signer_seeds: &[&[&[u8]]] = &[&[&sender, &sender_chain.to_be_bytes(), &bump]];
 
         let approve_ctx = CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
@@ -1079,7 +1082,7 @@ pub mod solana_project {
     pub fn transfer_native(
         ctx: Context<DirectTransferNative>,
         sender: Vec<u8>,
-        sender_chain: Vec<u8>,
+        sender_chain: u16,
         target_chain: u16,
         fee: u64,
 
@@ -1094,7 +1097,7 @@ pub mod solana_project {
 
         let bump = ctx.bumps.get("pda_signer").unwrap().to_le_bytes();
 
-        let signer_seeds: &[&[&[u8]]] = &[&[&sender, &sender_chain, &bump]];
+        let signer_seeds: &[&[&[u8]]] = &[&[&sender, &sender_chain.to_be_bytes(), &bump]];
 
         let approve_ctx = CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),

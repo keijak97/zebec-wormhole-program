@@ -119,7 +119,7 @@ pub struct SendMsg<'info>{
     pid: Pubkey,
     accs: Vec<TransactionAccount>,
     data: Vec<u8>,
-    current_count: u8,
+    current_count: u128,
     sender: Vec<u8>,
 )]
 pub struct CreateTransaction<'info> {
@@ -135,7 +135,7 @@ pub struct CreateTransaction<'info> {
         seeds = [
             b"data_store".as_ref(),
             &sender, 
-            current_count.to_string().as_bytes()
+            &current_count.to_be_bytes()
         ],
         bump
     )]
@@ -159,8 +159,8 @@ pub struct CreateTransaction<'info> {
     pid: Pubkey,
     accs: Vec<TransactionAccount>,
     data: Vec<u8>,
-    current_count: u8,
-    chain_id: Vec<u8>,
+    current_count: u128,
+    chain_id: u16,
     sender: Vec<u8>,
 )]
 pub struct CETransaction<'info> {
@@ -176,7 +176,7 @@ pub struct CETransaction<'info> {
         seeds = [
             b"data_store".as_ref(),
             &sender, 
-            current_count.to_string().as_bytes()
+            &current_count.to_be_bytes()
         ],
         bump
     )]
@@ -198,7 +198,7 @@ pub struct CETransaction<'info> {
         mut,
         seeds = [
             &sender,
-            &chain_id
+            &chain_id.to_be_bytes()
         ],
         bump
     )]
@@ -208,8 +208,9 @@ pub struct CETransaction<'info> {
 #[derive(Accounts)]
 #[instruction( 
     sender: Vec<u8>,
-    chain_id: Vec<u8>,
-    current_count: u8,
+    chain_id: u16,
+    
+    current_count: u128,
 )]
 pub struct DirectTransferNative<'info> {
     // One of the owners. Checked in the handler.
@@ -221,7 +222,7 @@ pub struct DirectTransferNative<'info> {
         seeds = [
             b"data_store".as_ref(),
             &sender, 
-            current_count.to_string().as_bytes()
+            &current_count.to_be_bytes()
         ],
         bump
     )]
@@ -244,7 +245,7 @@ pub struct DirectTransferNative<'info> {
         mut,
         seeds = [
             &sender,
-            &chain_id
+            &chain_id.to_be_bytes(),
         ],
         bump
     )]
@@ -365,8 +366,9 @@ pub struct DirectTransferNative<'info> {
 #[derive(Accounts)]
 #[instruction( 
     sender: Vec<u8>,
-    chain_id: Vec<u8>,
-    current_count: u8,
+    chain_id: u16,
+
+    current_count: u128,
 
     token_address: Vec<u8>,
     target_chain: u16,
@@ -381,7 +383,7 @@ pub struct DirectTransferWrapped<'info> {
         seeds = [
             b"data_store".as_ref(),
             &sender, 
-            current_count.to_string().as_bytes()
+            &current_count.to_be_bytes()
         ],
         bump
     )]
@@ -404,7 +406,7 @@ pub struct DirectTransferWrapped<'info> {
         mut,
         seeds = [
             &sender,
-            &chain_id
+            &chain_id.to_be_bytes()
         ],
         bump
     )]
@@ -427,7 +429,7 @@ pub struct DirectTransferWrapped<'info> {
 
     #[account(
         mut,
-        seeds = [&sender, &chain_id],
+        seeds = [&sender, &chain_id.to_be_bytes()],
         bump
     )]
     /// CHECK: xchain user
@@ -538,7 +540,8 @@ pub struct DirectTransferWrapped<'info> {
     pid: Pubkey,
     accs: Vec<TransactionAccount>,
     data: Vec<u8>,
-    current_count: u8,
+
+    current_count: u128,
     sender: Vec<u8>,
 )]
 pub struct CreateTransactionReceiver<'info> {
@@ -554,7 +557,7 @@ pub struct CreateTransactionReceiver<'info> {
         seeds = [
             b"data_store".as_ref(),
             &sender, 
-            current_count.to_string().as_bytes()
+            &current_count.to_be_bytes()
         ],
         bump
     )]
@@ -575,7 +578,7 @@ pub struct CreateTransactionReceiver<'info> {
 
 #[derive(Accounts)]
 #[instruction(
-    current_count: u8, 
+    current_count: u128, 
     sender: Vec<u8>, 
 )]
 pub struct StoreMsg<'info>{
@@ -636,7 +639,7 @@ pub struct StoreMsg<'info>{
 
 #[derive(Accounts)]
 #[instruction(  
-    from_chain_id: Vec<u8>,
+    from_chain_id: u16,
     eth_add: Vec<u8>
 )]
 pub struct ExecuteTransaction<'info> {
@@ -646,7 +649,7 @@ pub struct ExecuteTransaction<'info> {
         mut,
         seeds = [
             &eth_add,
-            &from_chain_id
+            &from_chain_id.to_be_bytes()
         ],
         bump
     )]
