@@ -123,6 +123,13 @@ pub mod solana_project {
     }
 
     pub fn store_msg(ctx: Context<StoreMsg>, current_count: u8, sender: Vec<u8>) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 000;
+
+        if processed_vaa_account.transaction_state == 100 | 110 | 111 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
+
         //Hash a VAA Extract and derive a VAA Key
         let vaa = PostedMessageData::try_from_slice(&ctx.accounts.core_bridge_vaa.data.borrow())?.0;
         let serialized_vaa = serialize_vaa(&vaa);
@@ -164,21 +171,25 @@ pub mod solana_project {
             count_stored == current_count,
             MessengerError::InvalidDataProvided
         );
+        let data_storage = &mut ctx.accounts.data_storage;
+        data_storage.processed_vaa = processed_vaa_account.key();
 
         // Switch Based on the code
         //TODO: return error if otherwise
         match code {
-            2 => process_stream(encoded_str, vaa.emitter_chain, ctx),
-            4 => process_withdraw_stream(encoded_str, vaa.emitter_chain, ctx),
-            6 => process_deposit(encoded_str, vaa.emitter_chain, ctx),
-            8 => process_pause(encoded_str, vaa.emitter_chain, ctx),
-            10 => process_withdraw(encoded_str, vaa.emitter_chain, ctx),
-            12 => process_instant_transfer(encoded_str, vaa.emitter_chain, ctx),
-            14 => process_update_stream(encoded_str, vaa.emitter_chain, ctx),
-            16 => process_cancel_stream(encoded_str, vaa.emitter_chain, ctx),
-            17 => process_direct_transfer(encoded_str, vaa.emitter_chain, ctx),
+            2 => process_stream(encoded_str, vaa.emitter_chain, data_storage),
+            4 => process_withdraw_stream(encoded_str, vaa.emitter_chain, data_storage),
+            6 => process_deposit(encoded_str, vaa.emitter_chain, data_storage),
+            8 => process_pause(encoded_str, vaa.emitter_chain, data_storage),
+            10 => process_withdraw(encoded_str, vaa.emitter_chain, data_storage),
+            12 => process_instant_transfer(encoded_str, vaa.emitter_chain, data_storage),
+            14 => process_update_stream(encoded_str, vaa.emitter_chain, data_storage),
+            16 => process_cancel_stream(encoded_str, vaa.emitter_chain, data_storage),
+            17 => process_direct_transfer(encoded_str, vaa.emitter_chain, data_storage),
             _ => msg!("error"),
         }
+        processed_vaa_account.transaction_state = 100;
+
         Ok(())
     }
 
@@ -192,6 +203,10 @@ pub mod solana_project {
         chain_id: Vec<u8>,
         sender: Vec<u8>,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state == 111 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         //Build Transactions
         let tx = &mut ctx.accounts.transaction;
         tx.program_id = pid;
@@ -266,6 +281,8 @@ pub mod solana_project {
         msg!("Transaction Execute");
 
         solana_program::program::invoke_signed(&ix, accounts, signer)?;
+        processed_vaa_account.transaction_state = 111;
+
         Ok(())
     }
 
@@ -279,6 +296,10 @@ pub mod solana_project {
         current_count: u8,
         sender: Vec<u8>,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state ==  110 | 111 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         //Build Transactions
         let tx = &mut ctx.accounts.transaction;
         tx.program_id = pid;
@@ -354,6 +375,7 @@ pub mod solana_project {
             decode_data.can_update == ctx.accounts.data_storage.can_update,
             MessengerError::InvalidDataProvided
         );
+        processed_vaa_account.transaction_state = 110;
 
         Ok(())
     }
@@ -368,6 +390,10 @@ pub mod solana_project {
         chain_id: Vec<u8>,
         sender: Vec<u8>,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state == 111 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         //Build Transactions
         let tx = &mut ctx.accounts.transaction;
         tx.program_id = pid;
@@ -472,6 +498,8 @@ pub mod solana_project {
         msg!("Transaction Execute");
 
         solana_program::program::invoke_signed(&ix, accounts, signer)?;
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 111;
         Ok(())
     }
 
@@ -485,6 +513,10 @@ pub mod solana_project {
         chain_id: Vec<u8>,
         sender: Vec<u8>,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state ==  111 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         //Build Transactions
         let tx = &mut ctx.accounts.transaction;
         tx.program_id = pid;
@@ -571,6 +603,8 @@ pub mod solana_project {
         msg!("Transaction Execute");
 
         solana_program::program::invoke_signed(&ix, accounts, signer)?;
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 111;
         Ok(())
     }
 
@@ -584,6 +618,10 @@ pub mod solana_project {
         current_count: u8,
         sender: Vec<u8>,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state ==  110 | 111 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         //Build Transactions
         let tx = &mut ctx.accounts.transaction;
         tx.program_id = pid;
@@ -644,7 +682,8 @@ pub mod solana_project {
             pda_receiver_passed == receiver_derived_pubkey.0,
             MessengerError::InvalidDataProvided
         );
-
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 110;
         //check data params passed
         Ok(())
     }
@@ -658,6 +697,10 @@ pub mod solana_project {
         current_count: u8,
         sender: Vec<u8>,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state ==  110 | 111 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         //Build Transactions
         let tx = &mut ctx.accounts.transaction;
         tx.program_id = pid;
@@ -715,7 +758,8 @@ pub mod solana_project {
             pda_receiver_passed == receiver_derived_pubkey.0,
             MessengerError::InvalidDataProvided
         );
-
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 110;
         //check data params passed
         Ok(())
     }
@@ -729,6 +773,10 @@ pub mod solana_project {
         current_count: u8,
         sender: Vec<u8>,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state ==  110 | 111{
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         //Build Transactions
         let tx = &mut ctx.accounts.transaction;
         tx.program_id = pid;
@@ -772,6 +820,8 @@ pub mod solana_project {
             decode_data.amount == ctx.accounts.data_storage.amount,
             MessengerError::InvalidDataProvided
         );
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 110;
 
         Ok(())
     }
@@ -785,6 +835,10 @@ pub mod solana_project {
         current_count: u8,
         sender: Vec<u8>,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state ==  110 | 111{
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         //Build Transactions
         let tx = &mut ctx.accounts.transaction;
         tx.program_id = pid;
@@ -844,7 +898,8 @@ pub mod solana_project {
             decode_data.amount == ctx.accounts.data_storage.amount,
             MessengerError::InvalidDataProvided
         );
-
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 110;
         Ok(())
     }
 
@@ -857,6 +912,10 @@ pub mod solana_project {
         target_chain: u16,
         fee: u64,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state ==  111 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         let count_stored = ctx.accounts.txn_count.count;
         require!(
             count_stored == current_count,
@@ -902,6 +961,10 @@ pub mod solana_project {
         amount: u64,
         fee: u64,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state ==  110 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         let count_stored = ctx.accounts.txn_count.count;
         require!(
             count_stored == current_count,
@@ -947,6 +1010,10 @@ pub mod solana_project {
         from_chain_id: Vec<u8>,
         eth_add: Vec<u8>,
     ) -> Result<()> {
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        if processed_vaa_account.transaction_state == 111 {
+            return err!(MessengerError::TransactionAlreadyExecuted);
+        }
         // params if passed incorrecrtly the signature will not work and the txn will panic.
         // Has this been executed already?
         if ctx.accounts.transaction.did_execute {
@@ -977,6 +1044,9 @@ pub mod solana_project {
         msg!("Transaction Execute");
 
         solana_program::program::invoke_signed(&ix, accounts, signer)?;
+
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 111;
 
         Ok(())
     }
@@ -1079,6 +1149,8 @@ pub mod solana_project {
 
         ctx.accounts.config.nonce += 1;
 
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 111;
         Ok(())
     }
 
@@ -1181,6 +1253,9 @@ pub mod solana_project {
 
         ctx.accounts.config.nonce += 1;
 
+        let processed_vaa_account = &mut ctx.accounts.processed_vaa;
+        processed_vaa_account.transaction_state = 111;
+
         Ok(())
     }
 }
@@ -1235,9 +1310,11 @@ pub fn serialize_vaa(vaa: &MessageData) -> Vec<u8> {
     v.into_inner()
 }
 
-fn process_deposit(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg>) {
-    let transaction_data = &mut ctx.accounts.data_storage;
-
+fn process_deposit(
+    encoded_str: Vec<u8>,
+    from_chain_id: u16,
+    transaction_data: &mut Account<TransactionData>,
+) {
     let amount = get_u64(encoded_str[1..9].to_vec());
     let _to_chain_id = get_u256(encoded_str[9..41].to_vec());
     let senderbytes = encoded_str[41..73].to_vec();
@@ -1249,8 +1326,11 @@ fn process_deposit(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreM
     transaction_data.token_mint = Pubkey::new(&token_mint_bytes[..]);
 }
 
-fn process_stream(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg>) {
-    let transaction_data = &mut ctx.accounts.data_storage;
+fn process_stream(
+    encoded_str: Vec<u8>,
+    from_chain_id: u16,
+    transaction_data: &mut Account<TransactionData>,
+) {
     let start_time = get_u64(encoded_str[1..9].to_vec());
     let end_time = get_u64(encoded_str[9..17].to_vec());
     let amount = get_u64(encoded_str[17..25].to_vec());
@@ -1274,8 +1354,11 @@ fn process_stream(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMs
     transaction_data.token_mint = Pubkey::new(&token_mint_bytes[..]);
 }
 
-fn process_update_stream(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg>) {
-    let transaction_data = &mut ctx.accounts.data_storage;
+fn process_update_stream(
+    encoded_str: Vec<u8>,
+    from_chain_id: u16,
+    transaction_data: &mut Account<TransactionData>,
+) {
     let start_time = get_u64(encoded_str[1..9].to_vec());
     let end_time = get_u64(encoded_str[9..17].to_vec());
     let amount = get_u64(encoded_str[17..25].to_vec());
@@ -1295,8 +1378,11 @@ fn process_update_stream(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<
     transaction_data.data_account = Pubkey::new(&data_account[..]);
 }
 
-fn process_pause(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg>) {
-    let transaction_data = &mut ctx.accounts.data_storage;
+fn process_pause(
+    encoded_str: Vec<u8>,
+    from_chain_id: u16,
+    transaction_data: &mut Account<TransactionData>,
+) {
     let _to_chain_id = get_u256(encoded_str[1..33].to_vec());
     let depositor_wallet_bytes = encoded_str[33..65].to_vec();
     let token_mint = encoded_str[65..97].to_vec();
@@ -1311,8 +1397,11 @@ fn process_pause(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg
 }
 
 //receiver will withdraw streamed tokens (receiver == withdrawer)
-fn process_withdraw_stream(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg>) {
-    let transaction_data = &mut ctx.accounts.data_storage;
+fn process_withdraw_stream(
+    encoded_str: Vec<u8>,
+    from_chain_id: u16,
+    transaction_data: &mut Account<TransactionData>,
+) {
     let _to_chain_id = get_u256(encoded_str[1..33].to_vec());
     let withdrawer_wallet_bytes = encoded_str[33..65].to_vec();
     let token_mint = encoded_str[65..97].to_vec();
@@ -1326,8 +1415,11 @@ fn process_withdraw_stream(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Contex
     transaction_data.data_account = Pubkey::new(&data_account[..]);
 }
 
-fn process_cancel_stream(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg>) {
-    let transaction_data = &mut ctx.accounts.data_storage;
+fn process_cancel_stream(
+    encoded_str: Vec<u8>,
+    from_chain_id: u16,
+    transaction_data: &mut Account<TransactionData>,
+) {
     let _to_chain_id = get_u256(encoded_str[1..33].to_vec());
     let depositor_wallet_bytes = encoded_str[33..65].to_vec();
     let token_mint = encoded_str[65..97].to_vec();
@@ -1342,8 +1434,11 @@ fn process_cancel_stream(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<
 }
 
 //sender will withdraw deposited token
-fn process_withdraw(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg>) {
-    let transaction_data = &mut ctx.accounts.data_storage;
+fn process_withdraw(
+    encoded_str: Vec<u8>,
+    from_chain_id: u16,
+    transaction_data: &mut Account<TransactionData>,
+) {
     let amount = get_u64(encoded_str[1..9].to_vec());
     let _to_chain_id = get_u256(encoded_str[9..41].to_vec());
     let withdrawer_wallet_bytes = encoded_str[41..73].to_vec();
@@ -1355,9 +1450,11 @@ fn process_withdraw(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<Store
     transaction_data.amount = amount;
 }
 
-fn process_instant_transfer(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg>) {
-    let transaction_data = &mut ctx.accounts.data_storage;
-
+fn process_instant_transfer(
+    encoded_str: Vec<u8>,
+    from_chain_id: u16,
+    transaction_data: &mut Account<TransactionData>,
+) {
     let amount = get_u64(encoded_str[1..9].to_vec());
     let _to_chain_id = get_u256(encoded_str[9..41].to_vec());
     let senderwallet_bytes = encoded_str[41..73].to_vec();
@@ -1371,9 +1468,11 @@ fn process_instant_transfer(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Conte
     transaction_data.amount = amount;
 }
 
-fn process_direct_transfer(encoded_str: Vec<u8>, from_chain_id: u16, ctx: Context<StoreMsg>) {
-    let transaction_data = &mut ctx.accounts.data_storage;
-
+fn process_direct_transfer(
+    encoded_str: Vec<u8>,
+    from_chain_id: u16,
+    transaction_data: &mut Account<TransactionData>,
+) {
     let amount = get_u64(encoded_str[1..9].to_vec());
     let _to_chain_id = get_u256(encoded_str[9..41].to_vec());
     let senderwallet_bytes = encoded_str[41..73].to_vec();

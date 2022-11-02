@@ -19,7 +19,9 @@ pub struct EmitterAddrAccount {
 
 //Empty account, we just need to check that it *exists*
 #[account]
-pub struct ProcessedVAA {}
+pub struct ProcessedVAA {
+    pub transaction_state: u8,
+}
 
 #[account]
 pub struct Transaction {
@@ -49,6 +51,7 @@ pub struct TransactionData {
     pub end_time: u64,
     pub can_update: bool,
     pub can_cancel: bool,
+    pub processed_vaa: Pubkey,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]

@@ -152,6 +152,10 @@ pub struct CreateTransaction<'info> {
         bump
     )]
     pub txn_count: Account<'info, Count>,
+    #[account(
+        constraint = processed_vaa.key() == data_storage.processed_vaa
+    )]
+    pub processed_vaa: Account<'info, ProcessedVAA>,
 }
 
 #[derive(Accounts)]
@@ -203,6 +207,12 @@ pub struct CETransaction<'info> {
         bump
     )]
     pub pda_signer: UncheckedAccount<'info>,
+
+    #[account(
+        constraint = processed_vaa.key() == data_storage.processed_vaa
+    )]
+    pub processed_vaa: Account<'info, ProcessedVAA>,
+    
 }
 
 #[derive(Accounts)]
@@ -358,7 +368,12 @@ pub struct DirectTransferNative<'info> {
 
     pub core_bridge_program: Program<'info, WormholeCoreBridge>,
 
-    pub token_program: Program<'info, Token>
+    pub token_program: Program<'info, Token>,
+    
+    #[account(
+        constraint = processed_vaa.key() == data_storage.processed_vaa
+    )]
+    pub processed_vaa: Account<'info, ProcessedVAA>,
 
 }
 
@@ -519,7 +534,11 @@ pub struct DirectTransferWrapped<'info> {
 
     pub core_bridge_program: Program<'info, WormholeCoreBridge>,
 
-    pub token_program: Program<'info, Token>
+    pub token_program: Program<'info, Token>,
+    #[account(
+        constraint = processed_vaa.key() == data_storage.processed_vaa
+    )]
+    pub processed_vaa: Account<'info, ProcessedVAA>,
 
 }
 
@@ -562,6 +581,10 @@ pub struct CreateTransactionReceiver<'info> {
         bump
     )]
     pub txn_count: Account<'info, Count>,
+    #[account(
+        constraint = processed_vaa.key() == data_storage.processed_vaa
+    )]
+    pub processed_vaa: Account<'info, ProcessedVAA>,
 }
 
 #[derive(Accounts)]
@@ -600,7 +623,7 @@ pub struct StoreMsg<'info>{
 
     #[account(
         init_if_needed,
-        space = 8 + 174,
+        space = 8 + 174 + 3,
         payer = payer,
         seeds = [
             b"data_store".as_ref(),
@@ -623,6 +646,7 @@ pub struct StoreMsg<'info>{
         bump
     )]
     pub txn_count: Account<'info, Count>,
+    
 }
 
 #[derive(Accounts)]
@@ -644,4 +668,9 @@ pub struct ExecuteTransaction<'info> {
     pub pda_signer: UncheckedAccount<'info>,
     #[account(mut)]
     pub transaction: Box<Account<'info, Transaction>>,
+    #[account(
+        constraint = processed_vaa.key() == data_storage.processed_vaa
+    )]
+    pub processed_vaa: Account<'info, ProcessedVAA>,
+    pub data_storage: Account<'info, TransactionData>,
 }
