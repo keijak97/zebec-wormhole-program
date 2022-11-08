@@ -33,7 +33,7 @@ use std::ops::Deref;
 
 use anchor_lang::solana_program::program::invoke_signed;
 
-declare_id!("GtyAQgcYTGso352pgR7T8tfESe3TGE5eUkEj9dYyrypS");
+declare_id!("CF6ZoBbyC6vqSZZifhBEsuZhbXkNWfmcrzpq2LFK1v8V");
 
 #[program]
 pub mod solana_project {
@@ -904,6 +904,7 @@ pub mod solana_project {
         ctx: Context<ExecuteTransaction>,
         eth_add: [u8; 32],
         from_chain_id: Vec<u8>,
+        _current_count: u8,
     ) -> Result<()> {
         require!(
             !ctx.accounts.txn_status.executed,

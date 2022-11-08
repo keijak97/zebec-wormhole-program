@@ -10,6 +10,7 @@ use hex::decode;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
+    //TODO:: REMOVE init_if_needed FOR MAINNET
     #[account(
         init_if_needed,
         seeds=[b"config".as_ref()],
@@ -33,6 +34,7 @@ pub struct RegisterChain<'info> {
         constraint = config.owner == owner.key()
     )]
     pub config: Account<'info, Config>,
+    //TODO:: REMOVE init_if_needed FOR MAINNET
     #[account(
         init_if_needed,
         seeds=[b"EmitterAddress".as_ref(), chain_id.to_be_bytes().as_ref()],
@@ -618,7 +620,7 @@ pub struct StoreMsg<'info>{
 #[instruction(  
     eth_add:[u8; 32],
     from_chain_id: Vec<u8>,
-    current_count: u8
+    _current_count: u8
 )]
 pub struct ExecuteTransaction<'info> {
     pub system_program: Program<'info, System>,
@@ -641,7 +643,7 @@ pub struct ExecuteTransaction<'info> {
         seeds = [
             b"txn_status".as_ref(),
             &eth_add,
-            &[current_count]
+            &[_current_count]
         ],
         bump
     )]
